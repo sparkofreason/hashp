@@ -2,11 +2,7 @@
   (:require [hashtag.core :as ht :refer [defhashtag]]
             [cognitect.transcriptor :as xr :refer (check!)]))
 
-(defn my-tap
-  [x]
-  (tap> (update x :stacktrace first)))
-
-(defhashtag h my-tap :locals? true :stacktrace-tx ht/current-frame)
+(defhashtag h tap> :locals? true)
 
 (defn foo
   [x]
@@ -29,22 +25,8 @@
 
 (check! #(= % [{:result 5,
                 :form '(+ 1 x),
-                :locals {:x 4, :y 8},
-                :stacktrace
-                {:file "core_test.clj",
-                 :line 13,
-                 :clojure true,
-                 :ns "hashtag.core-test",
-                 :fn "foo",
-                 :anon-fn false}}
+                :locals {:x 4, :y 8}}
                {:result 5,
                 :form '(foo x),
-                :locals {:x 4},
-                :stacktrace
-                {:file "core_test.clj",
-                 :line 17,
-                 :clojure true,
-                 :ns "hashtag.core-test",
-                 :fn "baz",
-                 :anon-fn false}}])
+                :locals {:x 4}}])
         @ts)
