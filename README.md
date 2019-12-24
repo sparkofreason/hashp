@@ -11,7 +11,7 @@ but with more flexibility, inspired by this [hashp issue][].
 
 ## Usage
 
-NOTE: pre-alpha, not yet published to clojars. Please give it a try
+**NOTE**: pre-alpha, not yet published to clojars. Please give it a try
 by either cloning locally or using `deps.edn` and `:git/url`. Expect
 breakage for now.
 
@@ -72,6 +72,12 @@ user=> (g 5)
 Setting the `:locals?` option to `true` adds a `:locals` attribute to the debug
 map, containing a map of keywordized local binding names to their current
 values (an idea borrowed from [athos/postmortem][]).
+
+**NOTE**: Initial commits include support for manipulating the stacktrace.
+This has been removed in favor of allowing implementers of hashtag handlers
+to do whatever stacktrace manipulations they require, rather than being stuck
+with the defaults that were defined here. See examples/hashp.clj for an
+example.
 
 [athos/postmortem]:https://github.com/athos/postmortem
 
