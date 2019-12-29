@@ -1,5 +1,7 @@
 (ns hashtag.core
-  (:require [clj-stacktrace.core :as stacktrace]
+  (:require [hash-meta.core :as hash-meta]
+            [clj-stacktrace.core :as stacktrace]
+            [net.cgrand.macrovich :as macros]
             [clojure.walk :as walk]
             [clojure.spec.alpha :as s]))
 
@@ -26,6 +28,7 @@
 (s/def ::debug-data (s/keys :req-un [::form ::result] :opt-un [::locals ::stacktrace]))
 
 (defn current-stacktrace []
+
   (->> (.getStackTrace (Thread/currentThread))
        (drop 3)
        (stacktrace/parse-trace-elems)))
@@ -52,20 +55,38 @@
 (def default-opts {:locals? false
                    :stacktrace-tx nil})
 
+(defn form->map
+  [handler-fn-sym form orig-form metadata opts]
+  (let [stacktrace-tx (:stacktrace-tx opts)
+        locals? (:locals? opts)]
+    `(let [locals# (when ~locals? (locals))
+           ~result-sym ~form
+           debug-data# (cond-> {:form '~orig-form :result ~result-sym :metadata ~metadata}
+                               ~locals?
+                               (assoc :locals locals#)
+
+                               (some? ~stacktrace-tx)
+                               (assoc :stacktrace
+                                      (sequence ~stacktrace-tx
+                                                (macros/case
+                                                  :clj  (->> (.getStackTrace (Thread/currentThread))
+                                                             (drop 3)
+                                                             (stacktrace/parse-trace-elems))
+                                                  :cljs (->> (ex-info "" {})
+                                                             .-stack
+                                                             (str/split-lines)
+                                                             (drop 2)
+                                                             (drop-while #(str/includes? % "ex_info"))
+                                                             (map #(str/replace % "    at " "")))))))]
+       (~handler-fn-sym debug-data#)
+       ~result-sym)))
+
 (defn make-hashtag
   [handler-fn-sym opts]
   (let [opts (merge default-opts opts)]
-    (fn [form]
-      (let [orig-form (walk/postwalk hide-p-form form)
-            stacktrace-tx (:stacktrace-tx opts)
-            locals? (:locals? opts)]
-        `(let [locals# (when ~locals? (locals))
-               ~result-sym ~form
-               debug-data# (cond-> {:form '~orig-form :result ~result-sym}
-                                   ~locals? (assoc :locals locals#)
-                                   (some? ~stacktrace-tx) (assoc :stacktrace (sequence ~stacktrace-tx (current-stacktrace))))]
-           (~handler-fn-sym debug-data#)
-           ~result-sym)))))
+    `(fn [form# orig-form# metadata#]
+       (form->map ~handler-fn-sym form# orig-form# metadata# '~opts))))
+
 
 (defmacro defhashtag
   "Defines and registers a \"tagged literal\" reader macro which calls hander-fn
@@ -76,9 +97,4 @@
          ** :locals? (false) - Default false. includes local bindings as a map.
          ** :stacktrace-tx (nil) - a transducer to process stackframes as defined in clj-stacktrace"
   [id handler-fn & {:as opts}]
-  (let [id' (-> id str (clojure.string/replace #"/" "-") symbol)]
-    `(do
-       (def ~id'
-         (make-hashtag ~handler-fn '~opts))
-       (set! *data-readers* (assoc *data-readers* '~id ~id'))
-       #'~id')))
+  (hash-meta/make-reader id (make-hashtag handler-fn opts) true))
