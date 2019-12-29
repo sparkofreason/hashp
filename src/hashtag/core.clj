@@ -57,7 +57,7 @@
 
 (defn form->map
   [handler-fn-sym form orig-form metadata opts]
-  (let [stacktrace-tx (:stacktrace-tx opts)
+  (let [stacktrace? (:stacktrace? opts)
         locals? (:locals? opts)]
     `(let [locals# (when ~locals? (locals))
            ~result-sym ~form
@@ -65,20 +65,20 @@
                                ~locals?
                                (assoc :locals locals#)
 
-                               (some? ~stacktrace-tx)
+                               ~stacktrace?
                                (assoc :stacktrace
-                                      (sequence ~stacktrace-tx
-                                                (macros/case
-                                                  :clj  (->> (.getStackTrace (Thread/currentThread))
-                                                             (drop 3)
-                                                             (stacktrace/parse-trace-elems))
-                                                  :cljs (->> (ex-info "" {})
-                                                             .-stack
-                                                             (str/split-lines)
-                                                             (drop 2)
-                                                             (drop-while #(str/includes? % "ex_info"))
-                                                             (map #(str/replace % "    at " "")))))))]
-       (~handler-fn-sym debug-data#)
+                                      (macros/case
+                                       :clj  (->> (.getStackTrace (Thread/currentThread))
+                                                  (drop 3)
+                                                  (stacktrace/parse-trace-elems))
+                                       :cljs (->> (ex-info "" {})
+                                                  .-stack
+                                                  (clojure.string/split-lines)
+                                                  (drop 2)
+                                                  (drop-while #(clojure.string/includes? % "ex_info"))
+                                                  (map #(clojure.string/replace % "    at " ""))))))]
+
+       ('~handler-fn-sym debug-data#)
        ~result-sym)))
 
 (defn make-hashtag
