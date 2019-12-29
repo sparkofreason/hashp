@@ -78,14 +78,15 @@
                                                   (drop-while #(clojure.string/includes? % "ex_info"))
                                                   (map #(clojure.string/replace % "    at " ""))))))]
 
-       ('~handler-fn-sym debug-data#)
+       (~handler-fn-sym debug-data#)
        ~result-sym)))
 
 (defn make-hashtag
   [handler-fn-sym opts]
   (let [opts (merge default-opts opts)]
+    (println handler-fn-sym)
     `(fn [form# orig-form# metadata#]
-       (form->map ~handler-fn-sym form# orig-form# metadata# '~opts))))
+       (form->map '~handler-fn-sym form# orig-form# metadata# '~opts))))
 
 
 (defmacro defhashtag

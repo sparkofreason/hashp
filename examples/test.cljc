@@ -1,7 +1,8 @@
 (ns test
-  #?(:cljs (:require [clojure.pprint :refer [pprint]]))
-  #?(:clj (:require [hashpp])
-     :cljs (:require-macros [hashpp])))
+  (:require [hashpp])
+  #?(:cljs (:require-macros [hashpp])))
+
+#?(:cljs (enable-console-print!))
 
 (defn f
   [x]
