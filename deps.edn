@@ -1,5 +1,6 @@
 {:paths ["src"]
- :deps {clj-stacktrace {:mvn/version "0.2.8"}}
+ :deps {hash-meta {:local/root "/Users/dave.dixon/clojure/hash-meta"}
+        clj-stacktrace {:mvn/version "0.2.8"}}
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {com.cognitect/transcriptor {:mvn/version "0.1.5"}}}
