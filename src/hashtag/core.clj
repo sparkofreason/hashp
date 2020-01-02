@@ -28,23 +28,13 @@
 (s/def ::debug-data (s/keys :req-un [::form ::result] :opt-un [::locals ::stacktrace]))
 
 (defn current-stacktrace []
-
   (->> (.getStackTrace (Thread/currentThread))
        (drop 3)
        (stacktrace/parse-trace-elems)))
 
-(def result-sym (gensym "result"))
-
-(defn- hide-p-form [form]
-  (if (and (seq? form)
-           (vector? (second form))
-           (= (-> form second first) result-sym))
-    (-> form second second)
-    form))
-
 (defmacro locals
   []
-  (->> &env
+  (->> (macros/case :clj &env :cljs (:locals &env))
        (map (fn [[name _]] `[~(keyword name) ~name]))
        (into {})))
 
@@ -56,12 +46,15 @@
                    :stacktrace-tx nil})
 
 (defn form->map
-  [handler-fn-sym form orig-form metadata opts]
+  [handler-form form orig-form metadata opts]
   (let [stacktrace? (:stacktrace? opts)
-        locals? (:locals? opts)]
+        locals? (:locals? opts)
+        clj-form (:clj handler-form)
+        cljs-form (:cljs handler-form)]
     `(let [locals# (when ~locals? (locals))
-           ~result-sym ~form
-           debug-data# (cond-> {:form '~orig-form :result ~result-sym :metadata ~metadata}
+           result-sym# ~form
+           handler-form# (or (macros/case :clj ~(:clj handler-form) :cljs ~(:cljs handler-form)) '~handler-form)
+           debug-data# (cond-> {:form '~orig-form :result result-sym# :metadata ~metadata}
                                ~locals?
                                (assoc :locals locals#)
 
@@ -69,24 +62,22 @@
                                (assoc :stacktrace
                                       (macros/case
                                        :clj  (->> (.getStackTrace (Thread/currentThread))
-                                                  (drop 3)
+                                                  (drop 1)
                                                   (stacktrace/parse-trace-elems))
                                        :cljs (->> (ex-info "" {})
                                                   .-stack
                                                   (clojure.string/split-lines)
-                                                  (drop 2)
+                                                  (drop 7)
                                                   (drop-while #(clojure.string/includes? % "ex_info"))
                                                   (map #(clojure.string/replace % "    at " ""))))))]
-
-       (~handler-fn-sym debug-data#)
-       ~result-sym)))
+       (handler-form# debug-data#)
+       result-sym#)))
 
 (defn make-hashtag
-  [handler-fn-sym opts]
+  [handler-form opts]
   (let [opts (merge default-opts opts)]
-    (println handler-fn-sym)
     `(fn [form# orig-form# metadata#]
-       (form->map '~handler-fn-sym form# orig-form# metadata# '~opts))))
+       (form->map '~handler-form form# orig-form# metadata# '~opts))))
 
 
 (defmacro defhashtag
@@ -97,5 +88,5 @@
       * opts - option key/value pairs.
          ** :locals? (false) - Default false. includes local bindings as a map.
          ** :stacktrace-tx (nil) - a transducer to process stackframes as defined in clj-stacktrace"
-  [id handler-fn & {:as opts}]
-  (hash-meta/make-reader id (make-hashtag handler-fn opts) true))
+  [id handler-form & {:as opts}]
+  (hash-meta/make-reader id (make-hashtag handler-form opts) true))
