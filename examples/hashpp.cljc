@@ -4,6 +4,6 @@
             #?(:clj [net.cgrand.macrovich :as macros])))
 
 #?(:clj
-    (defhashtag pp-all {:cljs println
-                        :clj #(clojure.pprint/pprint %)}
+    (defhashtag pp-all println #_{:cljs println
+                                  :clj #(clojure.pprint/pprint %)}
       :stacktrace? false :locals? true))

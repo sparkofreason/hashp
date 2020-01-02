@@ -1,7 +1,8 @@
 (ns hashp
   (:require [hashtag.core :as ht :refer [defhashtag]]
             [puget.printer :as puget]
-            [puget.color.ansi :as color]))
+            [puget.color.ansi :as color]
+            [clj-stacktrace.core :as st]))
 
 (defn trace-str [t]
   (str "[" (:ns t) "/" (:fn t) ":" (:line t) "]"))
@@ -20,12 +21,12 @@
   (locking lock
     (println
       (str prefix
-           (color/sgr (trace-str (-> t :stacktrace first)) :green) " "
+           (color/sgr (trace-str (->> t :stacktrace st/parse-trace-elems first)) :green)) " "
            (when-not (= (:result t) (:form t))
              (str (puget/pprint-str (:form t) print-opts) " => "))
-           (puget/pprint-str (:result t) print-opts)))))
+           (puget/pprint-str (:result t) print-opts))))
 
-(defhashtag p puget-print :stacktrace-tx ht/current-frame)
+(defhashtag p puget-print :stacktrace? true)
 
 (defn mean [xs]
   (/ (double #p (reduce + xs)) #p (count xs)))

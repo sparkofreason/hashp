@@ -22,7 +22,7 @@
   [x]
   (let [st (->> (current-stacktrace)
                 (filter :clojure)
-                (filter #(= "stacktrace" (:ns %))))]
+                (filter #(= (:ns x) (:ns %))))]
     (pprint (assoc x :stacktrace st))))
 
 (defhashtag pp ppst)

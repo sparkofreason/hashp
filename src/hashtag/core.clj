@@ -1,8 +1,6 @@
 (ns hashtag.core
   (:require [hash-meta.core :as hash-meta]
-            [clj-stacktrace.core :as stacktrace]
             [net.cgrand.macrovich :as macros]
-            [clojure.walk :as walk]
             [clojure.spec.alpha :as s]))
 
 
@@ -27,10 +25,9 @@
 
 (s/def ::debug-data (s/keys :req-un [::form ::result] :opt-un [::locals ::stacktrace]))
 
-(defn current-stacktrace []
-  (->> (.getStackTrace (Thread/currentThread))
-       (drop 3)
-       (stacktrace/parse-trace-elems)))
+(defmacro current-ns
+  []
+  (macros/case :clj (-> *ns* ns-name name) :cljs (str (get-in &env [:ns :name]))))
 
 (defmacro locals
   []
@@ -38,12 +35,8 @@
        (map (fn [[name _]] `[~(keyword name) ~name]))
        (into {})))
 
-(def all-frames (map identity))
-(def clojure-frames (filter :clojure))
-(def current-frame (comp clojure-frames (take 1)))
-
 (def default-opts {:locals? false
-                   :stacktrace-tx nil})
+                   :stacktrace? false})
 
 (defn form->map
   [handler-form form orig-form metadata opts]
@@ -53,8 +46,8 @@
         cljs-form (:cljs handler-form)]
     `(let [locals# (when ~locals? (locals))
            result-sym# ~form
-           handler-form# (or (macros/case :clj ~(:clj handler-form) :cljs ~(:cljs handler-form)) '~handler-form)
-           debug-data# (cond-> {:form '~orig-form :result result-sym# :metadata ~metadata}
+           handler-form# (macros/case :clj ~(:clj handler-form handler-form) :cljs ~(:cljs handler-form handler-form))
+           debug-data# (cond-> {:form '~orig-form :result result-sym# :metadata ~metadata :ns (current-ns)}
                                ~locals?
                                (assoc :locals locals#)
 
@@ -62,8 +55,7 @@
                                (assoc :stacktrace
                                       (macros/case
                                        :clj  (->> (.getStackTrace (Thread/currentThread))
-                                                  (drop 1)
-                                                  (stacktrace/parse-trace-elems))
+                                                  (drop 1))
                                        :cljs (->> (ex-info "" {})
                                                   .-stack
                                                   (clojure.string/split-lines)
