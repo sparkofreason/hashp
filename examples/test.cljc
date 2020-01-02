@@ -1,4 +1,4 @@
-(ns testf
+(ns test
   (:require [hashpp])
   #?(:cljs (:require-macros [hashpp])))
 
