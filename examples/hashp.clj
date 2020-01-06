@@ -1,5 +1,5 @@
 (ns hashp
-  (:require [hashtag.core :as ht :refer [defhashtag]]
+  (:require [sparkofreason.hashtag.core :as ht :refer [defhashtag]]
             [puget.printer :as puget]
             [puget.color.ansi :as color]
             [clj-stacktrace.core :as st]))

@@ -1,29 +1,21 @@
-(ns hashtag.core
-  (:require [hash-meta.core :as hash-meta]
+(ns sparkofreason.hashtag.core
+  (:require [sparkofreason.hash-meta.core :as hash-meta]
             [net.cgrand.macrovich :as macros]
             [clojure.spec.alpha :as s]))
 
-
-(s/def ::file string?)
 (s/def ::line pos-int?)
-(s/def ::java boolean?)
-(s/def ::clojure boolean?)
-(s/def ::class string?)
-(s/def ::method string?)
-(s/def ::ns string?)
-(s/def ::fn string?)
-(s/def ::anon-fn boolean?)
-(s/def ::java-frame (s/keys :opt-un [::file ::line ::java ::class ::method]))
-(s/def ::clojure-frame (s/keys :opt-un [::file ::line ::clojure ::ns ::fn ::anon-fn]))
-(s/def ::stack-frame (s/or :java ::java-frame :clojure ::clojure-frame))
-(s/def ::stacktrace (s/coll-of ::stack-frame))
+(s/def ::column pos-int?)
+(s/def ::metadata (s/keys :req-un [::line ::column]))
 
 (s/def ::locals (s/map-of keyword? any?))
 
+(s/def ::stacktrace (s/coll-of any?))
+
+(s/def ::ns string?)
 (s/def ::form any?)
 (s/def ::result any?)
 
-(s/def ::debug-data (s/keys :req-un [::form ::result] :opt-un [::locals ::stacktrace]))
+(s/def ::debug-data (s/keys :req-un [::form ::result ::ns ::metadata] :opt-un [::locals ::stacktrace]))
 
 (defmacro current-ns
   []
@@ -75,8 +67,14 @@
 (defmacro defhashtag
   "Defines and registers a \"tagged literal\" reader macro which calls hander-fn
    with data for debugging the tagged form.
-      * id - the name of the tag, e.g. p -> #p, foo/bar -> #foo/bar.
-      * handler-fn - a function of one argument with spec :hashtag.core/debug-data.
+      * id - the name of the tag, e.g. p -> #p.
+      * handler-form - The form representing a function of one argument, which will
+        be a map conforming to the :sparkofreason.hashtag.core/hashtag. The form can
+        be any of the following:
+         ** A function definition;
+         ** A namespace-qualified symbol that refers to an appropriate function;
+         ** A map with keys :clj and :cljs and values corresponding to either
+            option above, as required for the corresponding runtime environment.
       * opts - option key/value pairs.
          ** :locals? (false) - Default false. includes local bindings as a map.
          ** :stacktrace-tx (nil) - a transducer to process stackframes as defined in clj-stacktrace"

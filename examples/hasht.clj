@@ -1,5 +1,5 @@
 (ns hasht
-  (:require [hashtag.core :as ht :refer [defhashtag]]
+  (:require [sparkofreason.hashtag.core :as ht :refer [defhashtag]]
             [clojure.pprint :refer [pprint]]))
 
 (defhashtag t tap>)

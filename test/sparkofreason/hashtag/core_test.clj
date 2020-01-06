@@ -1,5 +1,5 @@
-(ns hashtag.core-test
-  (:require [hashtag.core :as ht :refer [defhashtag]]
+(ns sparkofreason.hashtag.core-test
+  (:require [sparkofreason.hashtag.core :as ht :refer [defhashtag]]
             [cognitect.transcriptor :as xr :refer (check!)]))
 
 (defhashtag h tap> :locals? true)
@@ -24,12 +24,12 @@
 (Thread/sleep 1000)
 (remove-tap tap-fn)
 
-(check! #(= % [{:ns "hashtag.core-test",
+(check! #(= % [{:ns "sparkofreason.hashtag.core-test",
                 :result 5,
                 :form '(+ 1 x),
                 :metadata {:line 10, :column 14},
                 :locals {:x 4, :y 8}}
-               {:ns "hashtag.core-test",
+               {:ns "sparkofreason.hashtag.core-test",
                 :result 5,
                 :form '(foo x),
                 :metadata {:line 15, :column 6},

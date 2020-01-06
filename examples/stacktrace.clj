@@ -1,5 +1,5 @@
 (ns stacktrace
-  (:require [hashtag.core :as ht :refer [defhashtag]]
+  (:require [sparkofreason.hashtag.core :as ht :refer [defhashtag]]
             [clj-stacktrace.core :as stacktrace]
             [clojure.pprint :refer [pprint]]))
 

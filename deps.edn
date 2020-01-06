@@ -1,6 +1,5 @@
 {:paths ["src"]
- :deps {hash-meta {:git/url "https://github.com/sparkofreason/hash-meta"
-                   :sha "739dd5b47b00e3eb175da2f680c9ab3658099671"}
+ :deps {sparkofreason/hash-meta {:mvn/version "0.2.0"}
         net.cgrand/macrovich {:mvn/version "0.2.1"}}
  :aliases
  {:test {:extra-paths ["test"]
